@@ -1,0 +1,1601 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Plate Designer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Anton&family=Archivo+Black&family=Bebas+Neue&family=Black+Ops+One&family=Monoton&family=Oswald:wght@500;700&family=Passion+One:wght@700;900&family=Racing+Sans+One&family=Rajdhani:wght@600;700&family=Saira+Condensed:wght@700;800&family=Special+Elite&family=Stardos+Stencil:wght@400;700&family=Teko:wght@600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --ink:#0C1216; --panel:#131C22; --panel2:#0F171C; --rule:#22323C;
+  --text:#DEE9EF; --muted:#7A929E; --signal:#35A7E0; --amber:#E9A13B; --bad:#E0604B;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --disp:"Space Grotesk",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  background:var(--ink); color:var(--text);
+  font-family:var(--disp); font-size:14px;
+  display:grid; grid-template-columns:348px 1fr; height:100vh; overflow:hidden;
+}
+h1{font-size:15px;font-weight:700;letter-spacing:-.01em;margin:0}
+.sub{font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-top:3px}
+
+#panel{background:var(--panel);border-right:1px solid var(--rule);display:flex;flex-direction:column;min-height:0}
+#phead{padding:16px 18px 14px;border-bottom:1px solid var(--rule)}
+#pbody{overflow-y:auto;padding:4px 18px 20px;flex:1;min-height:0}
+#pbody::-webkit-scrollbar{width:9px}
+#pbody::-webkit-scrollbar-thumb{background:var(--rule);border-radius:9px}
+
+fieldset{border:0;margin:0;padding:18px 0 4px}
+fieldset+fieldset{border-top:1px solid var(--rule)}
+legend{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--signal);padding:0;margin-bottom:12px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px}
+.row label{color:var(--muted);font-size:12.5px;line-height:1.3}
+.row .ctl{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+input[type=range]{width:96px;accent-color:var(--signal);background:transparent}
+input[type=number],input[type=text]{width:78px;background:var(--panel2);border:1px solid var(--rule);color:var(--text);
+  font-family:var(--mono);font-size:12px;padding:5px 6px;border-radius:4px;text-align:right}
+input[type=text]{width:150px;text-align:left}
+input[type=color]{width:36px;height:26px;padding:2px;background:var(--panel2);border:1px solid var(--rule);border-radius:4px;cursor:pointer}
+input[type=number]:focus,input[type=text]:focus,select:focus,button:focus-visible{outline:2px solid var(--signal);outline-offset:1px}
+select{background:var(--panel2);border:1px solid var(--rule);color:var(--text);
+  font-family:var(--mono);font-size:12px;padding:5px 6px;border-radius:4px;width:100%}
+.val{font-family:var(--mono);font-size:12px;color:var(--text);min-width:40px;text-align:right}
+.sw{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none}
+.sw input{accent-color:var(--signal);width:15px;height:15px;margin:0;cursor:pointer}
+.hint{font-family:var(--mono);font-size:10.5px;color:var(--muted);line-height:1.5;margin:-4px 0 12px}
+input:disabled,select:disabled{opacity:.4}
+
+#conv{display:flex;align-items:center;gap:8px}
+#conv input{width:100%;text-align:right}
+#conv span{font-family:var(--mono);font-size:11px;color:var(--muted);flex:0 0 auto}
+
+#stage{display:grid;grid-template-rows:1fr auto;min-width:0;min-height:0}
+#view{position:relative;min-height:0;background:radial-gradient(120% 100% at 50% 0%,#16222A 0%,var(--ink) 68%)}
+#view canvas{display:block;width:100%;height:100%}
+#hud{position:absolute;top:14px;left:16px;font-family:var(--mono);font-size:10px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--muted);pointer-events:none}
+#hud b{color:var(--signal);font-weight:600}
+
+#dock{border-top:1px solid var(--rule);background:var(--panel2);display:flex;align-items:stretch}
+#plan{padding:14px 16px;border-right:1px solid var(--rule);flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+#plan canvas{display:block;width:220px;height:150px}
+#spec{flex:1;padding:14px 18px;display:flex;flex-direction:column;min-width:0}
+#grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:14px 18px;flex:1}
+.m .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.m .v{font-family:var(--mono);font-size:19px;font-weight:600;margin-top:3px;letter-spacing:-.02em}
+.m .u{font-size:11px;color:var(--muted);font-weight:400;margin-left:2px}
+.m.warn .v{color:var(--amber)}
+.m.bad .v{color:var(--bad)}
+
+#foot{display:flex;align-items:center;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--rule)}
+#note{font-family:var(--mono);font-size:10.5px;color:var(--muted);line-height:1.5;flex:1;min-width:0}
+#note.warn{color:var(--amber)} #note.bad{color:var(--bad)}
+button{font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  border:1px solid var(--rule);background:var(--panel);color:var(--text);
+  padding:10px 15px;border-radius:5px;cursor:pointer;white-space:nowrap}
+button:hover{border-color:var(--signal);color:var(--signal)}
+#dl{background:var(--amber);border-color:var(--amber);color:#1A1206}
+#dl:hover{background:#F2B355;border-color:#F2B355;color:#1A1206}
+#dl:disabled,#dl3mf:disabled{opacity:.5;cursor:wait}
+#dl3mf{background:var(--signal);border-color:var(--signal);color:#06222E}
+#dl3mf:hover{background:#5BC0F0;border-color:#5BC0F0;color:#06222E}
+#foot{flex-wrap:wrap;row-gap:8px}
+
+@media (max-width:900px){
+  body{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  #panel{max-height:46vh} #dock{flex-direction:column}
+  #plan{border-right:0;border-bottom:1px solid var(--rule);align-self:center}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+#modeSw{display:flex;gap:0;margin-top:10px;border:1px solid var(--rule);border-radius:5px;overflow:hidden;width:fit-content}
+#modeSw button{border:0;border-radius:0;padding:6px 13px;font-size:10.5px;background:transparent;color:var(--muted)}
+#modeSw button.active{background:var(--signal);color:#06222E}
+#modeSw button:hover{color:var(--signal)}
+#modeSw button.active:hover{color:#06222E}
+body.basic-mode .adv{display:none!important}
+#saveLink{font-family:var(--mono);font-size:10.5px;color:var(--signal);cursor:pointer;background:none;border:0;padding:0;text-decoration:underline;letter-spacing:0;text-transform:none;font-weight:400}
+#saveLink:hover{color:var(--text)}
+.qtip{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;
+  border-radius:50%;border:1px solid var(--muted);background:transparent;color:var(--muted);
+  font-family:var(--mono);font-size:9px;line-height:1;cursor:help;margin-left:6px;padding:0;
+  flex:0 0 auto;vertical-align:middle}
+.qtip:hover,.qtip:focus-visible{border-color:var(--signal);color:var(--signal);outline:none}
+legend .qtip{margin-left:8px;transform:translateY(-1px)}
+#qtipPop{position:fixed;max-width:240px;background:#0F1B22;border:1px solid var(--rule);border-radius:6px;
+  padding:9px 11px;font-family:var(--mono);font-size:10.5px;font-weight:400;color:var(--muted);line-height:1.5;
+  text-transform:none;letter-spacing:normal;z-index:200;opacity:0;pointer-events:none;
+  transition:opacity .1s ease;box-shadow:0 8px 22px rgba(0,0,0,.45)}
+#qtipPop.show{opacity:1}
+optgroup{font-family:var(--mono);font-style:normal;color:var(--signal)}
+</style>
+
+<div id="qtipPop" role="tooltip"></div>
+
+<div id="panel">
+  <div id="phead">
+    <h1>Plate Designer</h1>
+    <div class="sub">RC scale license plates · STL export</div>
+    <div id="modeSw">
+      <button type="button" id="modeBasicBtn">Basic</button>
+      <button type="button" id="modeAdvBtn" class="active">Advanced</button>
+    </div>
+  </div>
+  <div id="pbody">
+
+    <fieldset>
+      <legend>Presets</legend>
+      <div class="row"><label>Scale<button type="button" class="qtip" data-tip="Sizes the plate from a real 12&quot; × 6&quot; US plate divided by the scale ratio. Pick Custom size to enter width/height directly.">?</button></label></div>
+      <select id="scalePreset"></select>
+      <div style="height:10px"></div>
+      <div class="row"><label>Style<button type="button" class="qtip" data-tip="Loads a full look — colors, font, border, ornament and placeholder text — inspired by a region's plate style. Nothing here is an exact reproduction of any official design; retype the text for your own build.">?</button></label></div>
+      <select id="stylePreset"></select>
+    </fieldset>
+
+    <fieldset class="adv">
+      <legend>Plate size &amp; shape</legend>
+      <div class="row"><label>Width</label>
+        <div class="ctl"><input type="number" id="plateW" value="30.5" step="0.1" min="8" max="400"></div></div>
+      <div class="row"><label>Height</label>
+        <div class="ctl"><input type="number" id="plateH" value="15.2" step="0.1" min="4" max="200"></div></div>
+      <div class="row"><label>Corner radius</label>
+        <div class="ctl"><input type="range" id="cornerR" min="0" max="4" step="0.05" value="1"><span class="val" id="cornerRV">1.00</span></div></div>
+      <div class="row"><label>Thickness</label>
+        <div class="ctl"><input type="range" id="thickness" min="0.6" max="3" step="0.1" value="1.2"><span class="val" id="thicknessV">1.2</span></div></div>
+    </fieldset>
+
+    <fieldset class="adv">
+      <legend>Mounting holes<button type="button" class="qtip" data-tip="Real through-holes cut in the plate. At small scale these are tiny — most builders just glue the plate on instead, so this defaults off.">?</button></legend>
+      <div class="row"><label>Count</label>
+        <div class="ctl"><select id="holeCount" style="width:90px">
+          <option value="0" selected>None</option><option value="2">2 (top)</option><option value="4">4 (corners)</option>
+        </select></div></div>
+      <div class="row"><label>Diameter</label>
+        <div class="ctl"><input type="range" id="holeD" min="0.3" max="3" step="0.05" value="0.55" disabled><span class="val" id="holeDV">0.55</span></div></div>
+      <div class="row"><label>Inset from top</label>
+        <div class="ctl"><input type="range" id="holeInsetTop" min="0.5" max="20" step="0.1" value="0.9" disabled><span class="val" id="holeInsetTopV">0.9</span></div></div>
+      <div class="row"><label>Inset from side</label>
+        <div class="ctl"><input type="range" id="holeInsetSide" min="0.5" max="40" step="0.1" value="4" disabled><span class="val" id="holeInsetSideV">4.0</span></div></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Plate text<button type="button" class="qtip" data-tip="Kept short on purpose: more characters means smaller auto-fit text, and small text at RC scale is exactly what prints blurry. Shorter is crisper.">?</button></legend>
+      <div class="row"><label>Top line</label>
+        <div class="ctl"><input type="text" id="topText" value="CALIFORNIA" maxlength="16"></div></div>
+      <div class="row"><label>Main plate no.</label>
+        <div class="ctl"><input type="text" id="midText" value="8 CRWLR 1" maxlength="11"></div></div>
+      <div class="row"><label>Bottom line</label>
+        <div class="ctl"><input type="text" id="bottomText" value="CRAWL COAST" maxlength="20"></div></div>
+      <div class="row"><label>Font</label></div>
+      <select id="font"></select>
+      <div style="height:10px"></div>
+      <div class="row"><label class="sw"><input type="checkbox" id="topFontOn"> Different font on top line</label></div>
+      <div class="row" id="rowTopFont" style="display:none"><label>Top line font</label></div>
+      <select id="topFont" style="display:none" disabled></select>
+      <div style="height:12px" class="adv"></div>
+      <div class="row adv"><label>Letter spacing</label>
+        <div class="ctl"><input type="range" id="letterSpace" min="-0.04" max="0.35" step="0.01" value="0.06"><span class="val" id="letterSpaceV">0.06</span></div></div>
+      <div class="row adv"><label>Top line size<button type="button" class="qtip" data-tip="Font size as a percentage of the top band's max fit. Lower this if letters feel cramped against the border, raise it for bigger text.">?</button></label>
+        <div class="ctl"><input type="range" id="topTextScale" min="40" max="100" step="1" value="100"><span class="val" id="topTextScaleV">100%</span></div></div>
+      <div class="row adv"><label>Main text size</label>
+        <div class="ctl"><input type="range" id="midTextScale" min="40" max="100" step="1" value="100"><span class="val" id="midTextScaleV">100%</span></div></div>
+      <div class="row adv"><label>Bottom line size</label>
+        <div class="ctl"><input type="range" id="bottomTextScale" min="40" max="100" step="1" value="100"><span class="val" id="bottomTextScaleV">100%</span></div></div>
+    </fieldset>
+
+    <fieldset class="adv">
+      <legend>Text relief</legend>
+      <div class="row"><label>Mode</label>
+        <div class="ctl"><select id="textMode" style="width:120px">
+          <option value="emboss" selected>Emboss — raised</option>
+          <option value="engrave">Engrave — recessed</option>
+        </select></div></div>
+      <div class="row"><label>Height</label>
+        <div class="ctl"><input type="range" id="textHeight" min="0.1" max="1.5" step="0.05" value="0.4"><span class="val" id="textHeightV">0.40</span></div></div>
+    </fieldset>
+
+    <fieldset class="adv">
+      <legend>Border / frame</legend>
+      <div class="row"><label class="sw"><input type="checkbox" id="borderOn" checked> Show border</label></div>
+      <div class="row"><label>Frame style</label>
+        <div class="ctl"><select id="borderStyle" style="width:130px">
+          <option value="solid" selected>Solid band</option>
+          <option value="double">Double line</option>
+          <option value="dashed">Dashed</option>
+          <option value="brackets">Corner brackets</option>
+        </select></div></div>
+      <div class="row"><label>Inset from edge</label>
+        <div class="ctl"><input type="range" id="borderInset" min="0" max="4" step="0.05" value="1"><span class="val" id="borderInsetV">1.00</span></div></div>
+      <div class="row"><label>Frame width</label>
+        <div class="ctl"><input type="range" id="borderWidth" min="0.2" max="3" step="0.05" value="1"><span class="val" id="borderWidthV">1.00</span></div></div>
+      <div class="row"><label>Mode</label>
+        <div class="ctl"><select id="borderMode" style="width:120px">
+          <option value="emboss" selected>Emboss</option>
+          <option value="engrave">Engrave</option>
+          <option value="flush">Flush (color only)</option>
+        </select></div></div>
+      <div class="row"><label>Height</label>
+        <div class="ctl"><input type="range" id="borderHeight" min="0.1" max="1.2" step="0.05" value="0.3"><span class="val" id="borderHeightV">0.30</span></div></div>
+    </fieldset>
+
+    <fieldset class="adv">
+      <legend>Ornament<button type="button" class="qtip" data-tip="Icons use the same Placement/Size controls as the abstract shapes. To use one as a centerpiece instead of text, clear the middle text line, set Placement to Center, and raise Size.">?</button></legend>
+      <div class="row"><label>Shape</label></div>
+      <select id="ornament">
+        <option value="none">None</option>
+        <optgroup label="Abstract">
+          <option value="sunburst">Sunburst</option>
+          <option value="star">Star</option>
+          <option value="wave">Wave band</option>
+          <option value="diamondstrip">Diamond strip</option>
+          <option value="ridge">Mountain ridge</option>
+        </optgroup>
+        <optgroup label="Icons">
+          <option value="skull">Skull &amp; crossbones</option>
+          <option value="checkerflag">Checkered flag</option>
+          <option value="football">Football</option>
+          <option value="basketball">Basketball</option>
+          <option value="car">Car silhouette</option>
+          <option value="flame">Flame</option>
+          <option value="wrench">Wrench</option>
+          <option value="pawprint">Paw print</option>
+          <option value="bolt">Lightning bolt</option>
+          <option value="anchor">Anchor</option>
+        </optgroup>
+      </select>
+      <div style="height:10px"></div>
+      <div class="row"><label>Placement</label>
+        <div class="ctl"><select id="ornamentPos" style="width:130px">
+          <option value="corners">Corners</option>
+          <option value="top">Top band</option>
+          <option value="center">Center</option>
+          <option value="bottom" selected>Bottom band</option>
+        </select></div></div>
+      <div class="row"><label>Size</label>
+        <div class="ctl"><input type="range" id="ornamentSize" min="1" max="20" step="0.25" value="4" disabled><span class="val" id="ornamentSizeV">4.0</span></div></div>
+      <div class="row"><label>Mode</label>
+        <div class="ctl"><select id="ornamentMode" style="width:120px" disabled>
+          <option value="emboss" selected>Emboss</option>
+          <option value="engrave">Engrave</option>
+          <option value="flush">Flush (color only)</option>
+        </select></div></div>
+      <div class="row"><label>Height</label>
+        <div class="ctl"><input type="range" id="ornamentHeight" min="0.1" max="1.2" step="0.05" value="0.3" disabled><span class="val" id="ornamentHeightV">0.30</span></div></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Colors<button type="button" class="qtip" data-tip="Preview-only — a single-material FDM print comes out one color, raised/recessed by relief instead. Handy as a hand-painting guide.">?</button></legend>
+      <div class="row"><label>Plate</label><div class="ctl"><input type="color" id="plateColor" value="#1b3a6b"></div></div>
+      <div class="row"><label>Text</label><div class="ctl"><input type="color" id="textColor" value="#f4c430"></div></div>
+      <div class="row"><label>Border</label><div class="ctl"><input type="color" id="borderColor" value="#f4c430"></div></div>
+      <div class="row"><label>Ornament</label><div class="ctl"><input type="color" id="ornamentColor" value="#f4c430"></div></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Material &amp; printing</legend>
+      <div class="row"><label>Material</label>
+        <div class="ctl"><select id="material" style="width:108px">
+          <option value="PLA" selected>PLA</option><option value="PETG">PETG</option>
+          <option value="ABS">ABS</option><option value="TPU">TPU</option>
+        </select></div></div>
+      <div class="row"><label>Nozzle diameter<button type="button" class="qtip" data-tip="Used to flag plate/border/icon features thinner than your nozzle can lay down cleanly, and to compute the Rec. nozzle metric — the largest nozzle that can resolve the finest wall or gap in your current border and ornament icon. Detailed icons (skull, football, basketball, wrench, anchor, flame) often need a 0.2mm nozzle at small scales; simpler ones (car, bolt, paw print) don't.">?</button></label>
+        <div class="ctl"><select id="nozzle" style="width:108px">
+          <option value="0.2">0.2 mm</option><option value="0.4" selected>0.4 mm</option>
+          <option value="0.6">0.6 mm</option><option value="0.8">0.8 mm</option>
+        </select></div></div>
+    </fieldset>
+
+    <fieldset class="adv">
+      <legend>Detail &amp; performance<button type="button" class="qtip" data-tip="Text and the border are built from a fine raster, decomposed into rectangles and extruded — like a tiny voxel relief. Higher detail = smoother curves and letter edges, more triangles.">?</button></legend>
+      <div class="row"><label>Preview detail</label>
+        <div class="ctl"><input type="range" id="previewRes" min="3" max="10" step="1" value="6"><span class="val" id="previewResV">6</span></div></div>
+      <div class="row"><label>Export detail</label>
+        <div class="ctl"><input type="range" id="exportRes" min="6" max="20" step="1" value="12"><span class="val" id="exportResV">12</span></div></div>
+    </fieldset>
+
+    <fieldset class="adv">
+      <legend>Unit converter<button type="button" class="qtip" data-tip="Type in either field. 1.9&quot; wheel = 48.26 mm · 2.2&quot; = 55.88 mm · 1&quot; = 25.4 mm">?</button></legend>
+      <div id="conv">
+        <input type="number" id="cvMM" value="25.4" step="0.1"><span>mm</span>
+        <span style="color:var(--signal)">=</span>
+        <input type="number" id="cvIN" value="1" step="0.001"><span>in</span>
+      </div>
+    </fieldset>
+
+  </div>
+</div>
+
+<div id="stage">
+  <div id="view"><div id="hud">Drag to orbit · scroll to zoom · <b id="hudScale">1/10</b></div></div>
+  <div id="dock">
+    <div id="plan"><canvas id="planc" width="440" height="300"></canvas></div>
+    <div id="spec">
+      <div id="grid">
+        <div class="m"><div class="k">Plate size</div><div class="v" id="mSize">—<span class="u">mm</span></div></div>
+        <div class="m"><div class="k">Scale</div><div class="v" id="mScale">—</div></div>
+        <div class="m"><div class="k">Thickness</div><div class="v" id="mThick">—<span class="u">mm</span></div></div>
+        <div class="m"><div class="k">Est. mass</div><div class="v" id="mMass">—<span class="u">g</span></div></div>
+        <div class="m"><div class="k">Min text size</div><div class="v" id="mTextSize">—<span class="u">mm</span></div></div>
+        <div class="m"><div class="k">Rec. nozzle</div><div class="v" id="mNozzle">—</div></div>
+        <div class="m"><div class="k">Holes</div><div class="v" id="mHoles">—</div></div>
+        <div class="m"><div class="k">Triangles</div><div class="v" id="mTri">—</div></div>
+      </div>
+      <div id="foot">
+        <div id="note">Set your plate up, then export. Preview updates as you change values.</div>
+        <button id="reset">Reset</button>
+        <button id="dl" title="One color, one mesh — works with any slicer, any printer.">Export STL</button>
+        <button id="dl3mf" title="One pre-named, pre-colored object per part (background/border/ornament/text) — import into Bambu, Orca or PrusaSlicer and assign each object a filament. No manual painting.">Export 3MF · multi-color</button>
+      </div>
+      <div style="text-align:right;margin-top:6px"><button id="saveLink" type="button">Copy link to this build</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const TAU=Math.PI*2;
+
+/* ============================================================
+   CONSTANTS: real-world reference plate, fonts, presets
+   ============================================================ */
+const REAL_W=304.8, REAL_H=152.4;         // 12in x 6in US plate
+const REAL_R=9.5, REAL_HOLE_D=5.5, REAL_HOLE_INSET_TOP=9, REAL_HOLE_INSET_SIDE=80;
+
+const SCALES=[
+  {label:"1/8 scale",den:8},
+  {label:"1/10 scale (default)",den:10},
+  {label:"1/12 scale",den:12},
+  {label:"1/16 scale",den:16},
+  {label:"1/18 scale",den:18},
+  {label:"1/24 scale",den:24},
+  {label:"— custom size (enter mm above) —",den:null}
+];
+
+const FONTS=[
+  {k:"oswald",fam:"Oswald",w:700,cat:"Classic block"},
+  {k:"anton",fam:"Anton",w:400,cat:"Classic block"},
+  {k:"archivo",fam:"Archivo Black",w:400,cat:"Classic block"},
+  {k:"passion",fam:"Passion One",w:900,cat:"Classic block"},
+  {k:"bebas",fam:"Bebas Neue",w:400,cat:"Classic block"},
+  {k:"teko",fam:"Teko",w:700,cat:"Tech / condensed"},
+  {k:"rajdhani",fam:"Rajdhani",w:700,cat:"Tech / condensed"},
+  {k:"saira",fam:"Saira Condensed",w:800,cat:"Tech / condensed"},
+  {k:"racing",fam:"Racing Sans One",w:400,cat:"Motorsport"},
+  {k:"blackops",fam:"Black Ops One",w:400,cat:"Stencil / military"},
+  {k:"stardos",fam:"Stardos Stencil",w:700,cat:"Stencil / military"},
+  {k:"special",fam:"Special Elite",w:400,cat:"Retro / novelty"},
+  {k:"monoton",fam:"Monoton",w:400,cat:"Retro / novelty"}
+];
+const FONT_BY_KEY={}; FONTS.forEach(f=>FONT_BY_KEY[f.k]=f);
+
+/* Style presets: colors + placeholder text "inspired by" a region's classic
+   plate look. None of these reproduce an official design pixel-for-pixel —
+   no state seals or exact typefaces/slogans, just a palette + layout in the
+   same spirit, meant for tiny 3D-printed hobby parts. Retype the text for
+   your own build; the font/colors are yours to keep or change. */
+const STYLE_PRESETS=[
+  {name:"Blank slate", plate:"#F2F1EC", text:"#1B1B1B", border:"#1B1B1B", orn:"none", ornPos:"bottom", ornColor:"#1B1B1B",
+   font:"oswald", topFontOn:false, topFont:"oswald", top:"", mid:"ABC 1234", bottom:"", borderOn:true},
+  {name:"Golden State Sunset", plate:"#1B3A6B", text:"#F4C430", border:"#F4C430", orn:"wave", ornPos:"bottom", ornColor:"#F4C430",
+   font:"archivo", topFontOn:false, topFont:"oswald", top:"CALIFORNIA", mid:"8 CRWLR 1", bottom:"CRAWL COAST", borderOn:true},
+  {name:"Coastal Sun", plate:"#E8722C", text:"#FFFFFF", border:"#FFFFFF", orn:"sunburst", ornPos:"corners", ornColor:"#FFD37A",
+   font:"racing", topFontOn:false, topFont:"oswald", top:"FLORIDA", mid:"TRL 4X4", bottom:"TRAIL COAST", borderOn:true},
+  {name:"Lone Star", plate:"#FFFFFF", text:"#101820", border:"#8A1538", orn:"star", ornPos:"top", ornColor:"#8A1538",
+   font:"anton", topFontOn:false, topFont:"oswald", top:"TEXAS", mid:"BIG RIG 1", bottom:"LONE STAR TRAIL", borderOn:true},
+  {name:"Empire Gold", plate:"#FFFFFF", text:"#1B2A6B", border:"#D9A441", orn:"none", ornPos:"bottom", ornColor:"#D9A441",
+   font:"teko", topFontOn:false, topFont:"oswald", top:"NEW YORK", mid:"SCL 2026", bottom:"EMPIRE CRAWLER", borderOn:true},
+  {name:"Garden Bloom", plate:"#F6E6A0", text:"#2F5233", border:"#2F5233", orn:"diamondstrip", ornPos:"bottom", ornColor:"#2F5233",
+   font:"rajdhani", topFontOn:false, topFont:"oswald", top:"NEW JERSEY", mid:"GDN 4X4", bottom:"GARDEN CRAWL", borderOn:true},
+  {name:"Peach Blush", plate:"#FBD9B0", text:"#4A6741", border:"#4A6741", orn:"none", ornPos:"bottom", ornColor:"#4A6741",
+   font:"saira", topFontOn:false, topFont:"oswald", top:"GEORGIA", mid:"PCH 1234", bottom:"RIDGE RUNNER", borderOn:true},
+  {name:"Bluegrass Ridge", plate:"#3E6B8A", text:"#FFFFFF", border:"#FFFFFF", orn:"ridge", ornPos:"bottom", ornColor:"#DCEEF5",
+   font:"oswald", topFontOn:false, topFont:"oswald", top:"KENTUCKY", mid:"BLU 4X4", bottom:"BLUE RIDGE TRAIL", borderOn:true},
+  {name:"Silver Sands", plate:"#C9CDD3", text:"#1A1A1A", border:"#1A1A1A", orn:"none", ornPos:"bottom", ornColor:"#1A1A1A",
+   font:"blackops", topFontOn:false, topFont:"oswald", top:"NEVADA", mid:"SLV RIG 1", bottom:"DESERT RATED", borderOn:true},
+  {name:"Copper Canyon", plate:"#B85C2E", text:"#F5E6C8", border:"#F5E6C8", orn:"sunburst", ornPos:"corners", ornColor:"#F5A25D",
+   font:"stardos", topFontOn:false, topFont:"oswald", top:"ARIZONA", mid:"CNY 4X4", bottom:"CANYON CRAWLER", borderOn:true},
+  {name:"Bayou Night", plate:"#3B1F4D", text:"#E8C766", border:"#E8C766", orn:"none", ornPos:"bottom", ornColor:"#E8C766",
+   font:"passion", topFontOn:false, topFont:"oswald", top:"LOUISIANA", mid:"BYU 1234", bottom:"BAYOU CRAWLER", borderOn:true},
+  {name:"Rocky Overlook", plate:"#EDEDE7", text:"#1F3B2C", border:"#1F3B2C", orn:"ridge", ornPos:"top", ornColor:"#8FAE94",
+   font:"teko", topFontOn:false, topFont:"oswald", top:"COLORADO", mid:"RKY 4X4", bottom:"SUMMIT TRAIL", borderOn:true},
+  {name:"Retro Neon (novelty)", plate:"#141018", text:"#FF3DAE", border:"#3DDCFF", orn:"none", ornPos:"bottom", ornColor:"#3DDCFF",
+   font:"monoton", topFontOn:false, topFont:"oswald", top:"NIGHT RUN", mid:"NEON 1", bottom:"NIGHT CRAWLER", borderOn:true},
+  {name:"Blackout (KS-style)", plate:"#0A0A0A", text:"#FFFFFF", border:"#FFFFFF", orn:"none", ornPos:"bottom", ornColor:"#FFFFFF",
+   font:"oswald", topFontOn:false, topFont:"oswald", top:"KANSAS", mid:"BLK OUT 1", bottom:"SUNFLOWER TRAIL", borderOn:true}
+];
+
+const DENSITY={PLA:1.24,PETG:1.27,ABS:1.04,TPU:1.21};
+
+/* ============================================================
+   RASTER HELPERS
+   The whole plate — outline, holes, border, ornament, text — is built by
+   one technique: draw the feature in white on a black offscreen canvas,
+   threshold it to a binary mask, decompose the mask into a small set of
+   maximal rectangles (greedy scanline merge), and extrude each rectangle
+   into a watertight box from Z=0 up to that feature's own height. Adjacent
+   independent boxes need no boolean union — like the reference insert
+   designer's separate ribbons/rings, a slicer resolves overlapping/adjacent
+   manifold solids into one printed part from their combined silhouette.
+   Letter counters (the hole in "O", "A", "B"...) fall out for free: canvas
+   fillText already renders them as background, not filled.
+   ============================================================ */
+
+/* adds one rounded-rect subpath to ctx's CURRENT path (caller controls
+   beginPath — two calls back-to-back with no beginPath between them is how
+   the border ring below builds its outer+inner evenodd donut) */
+function roundRectPath(ctx,x,y,w,h,r){
+  r=Math.max(0,Math.min(r,w/2,h/2));
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y);
+  ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);
+  ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);
+  ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);
+  ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
+}
+
+function makeCanvas(w,h){
+  const c=document.createElement("canvas"); c.width=Math.max(1,w); c.height=Math.max(1,h);
+  return c;
+}
+function maskFromCtx(ctx,W,H){
+  const data=ctx.getImageData(0,0,W,H).data, mask=new Uint8Array(W*H);
+  for(let i=0,p=0;i<W*H;i++,p+=4) mask[i]=data[p]>128?1:0;
+  return mask;
+}
+
+/* greedy scanline rectangle decomposition of a binary WxH mask */
+function greedyRects(mask,W,H){
+  const visited=new Uint8Array(W*H), rects=[];
+  for(let y=0;y<H;y++){
+    let x=0;
+    while(x<W){
+      const idx=y*W+x;
+      if(!mask[idx]||visited[idx]){ x++; continue; }
+      let w=1;
+      while(x+w<W && mask[y*W+x+w] && !visited[y*W+x+w]) w++;
+      let h=1;
+      outer: while(y+h<H){
+        for(let k=0;k<w;k++){
+          const jdx=(y+h)*W+x+k;
+          if(!mask[jdx]||visited[jdx]) break outer;
+        }
+        h++;
+      }
+      for(let yy=y;yy<y+h;yy++) for(let xx=x;xx<x+w;xx++) visited[yy*W+xx]=1;
+      rects.push({x0:x,y0:y,x1:x+w,y1:y+h});
+      x+=w;
+    }
+  }
+  return rects;
+}
+
+function hexToRGB(hex){
+  const n=parseInt(hex.slice(1),16);
+  return [((n>>16)&255)/255, ((n>>8)&255)/255, (n&255)/255];
+}
+
+/* a right-handed watertight box, outward-facing CCW winding on every face
+   (needed so exportSTL's cross-product normals point out, not in). boxVerts
+   returns the flat 36-vertex/108-number list once; emitBox (combined
+   preview/STL mesh) and the per-level arrays used by the 3MF exporter both
+   just copy from it, so there is exactly one place the face winding lives. */
+function boxVerts(x0,x1,y0,y1,z0,z1){
+  const V=[];
+  const push=(x,y,z)=>V.push(x,y,z);
+  const tri=(A,B,C)=>{ push(A[0],A[1],A[2]); push(B[0],B[1],B[2]); push(C[0],C[1],C[2]); };
+  tri([x0,y0,z0],[x0,y1,z0],[x1,y1,z0]); tri([x0,y0,z0],[x1,y1,z0],[x1,y0,z0]); // -Z
+  tri([x0,y0,z1],[x1,y0,z1],[x1,y1,z1]); tri([x0,y0,z1],[x1,y1,z1],[x0,y1,z1]); // +Z
+  tri([x0,y0,z0],[x0,y0,z1],[x0,y1,z1]); tri([x0,y0,z0],[x0,y1,z1],[x0,y1,z0]); // -X
+  tri([x1,y0,z0],[x1,y1,z0],[x1,y1,z1]); tri([x1,y0,z0],[x1,y1,z1],[x1,y0,z1]); // +X
+  tri([x0,y0,z0],[x1,y0,z0],[x1,y0,z1]); tri([x0,y0,z0],[x1,y0,z1],[x0,y0,z1]); // -Y
+  tri([x0,y1,z0],[x0,y1,z1],[x1,y1,z1]); tri([x0,y1,z0],[x1,y1,z1],[x1,y1,z0]); // +Y
+  return V;
+}
+function emitBox(pos,col,x0,x1,y0,y1,z0,z1,c){
+  const V=boxVerts(x0,x1,y0,y1,z0,z1);
+  for(let i=0;i<V.length;i+=3){ pos.push(V[i],V[i+1],V[i+2]); col.push(c[0],c[1],c[2]); }
+}
+
+/* ============================================================
+   TEXT LAYOUT
+   Auto-fits a single line into a box (mm, converted to px by the caller)
+   with a closed-form solve instead of a search: character widths scale
+   linearly with font size, so one reference measurement gives the ratio.
+   ============================================================ */
+function fitLine(ctx,text,family,weight,boxW,boxH,fillFrac,letterSpaceEm){
+  if(!text) return null;
+  const REF=200;
+  ctx.font=`${weight} ${REF}px "${family}"`;
+  const chars=Array.from(text);
+  let wRef=0; for(const c of chars) wRef+=ctx.measureText(c).width;
+  const n=chars.length;
+  const k=wRef/REF + letterSpaceEm*Math.max(0,n-1);
+  let fontPx=(boxW*fillFrac)/Math.max(k,1e-6);
+  const capRatio=0.72;
+  fontPx=Math.min(fontPx,(boxH*fillFrac)/capRatio);
+  fontPx=Math.max(fontPx,0.5);
+  return {fontPx,chars,totalW:fontPx*k};
+}
+function drawFittedLine(ctx,text,family,weight,cxp,cyp,boxW,boxH,fillFrac,letterSpaceEm,color){
+  const fit=fitLine(ctx,text,family,weight,boxW,boxH,fillFrac,letterSpaceEm);
+  if(!fit) return null;
+  const {fontPx,chars,totalW}=fit;
+  ctx.font=`${weight} ${fontPx}px "${family}"`;
+  ctx.textBaseline="middle"; ctx.textAlign="left"; ctx.fillStyle=color;
+  const spacingPx=letterSpaceEm*fontPx;
+  let x=cxp-totalW/2;
+  for(const c of chars){ ctx.fillText(c,x,cyp); x+=ctx.measureText(c).width+spacingPx; }
+  return fontPx;
+}
+
+/* ============================================================
+   ORNAMENTS — simple parametric shapes, not traced from any real emblem
+   ============================================================ */
+function drawPointShape(ctx,type,cx,cy,R){
+  if(type==="sunburst"){
+    const rays=10, rIn=R*0.42;
+    ctx.beginPath();
+    for(let i=0;i<rays*2;i++){
+      const a=Math.PI*i/rays, r=(i%2===0)?R:rIn;
+      const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a);
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+    }
+    ctx.closePath(); ctx.fill();
+  } else if(type==="star"){
+    const pts=5, rIn=R*0.45;
+    ctx.beginPath();
+    for(let i=0;i<pts*2;i++){
+      const a=-Math.PI/2+Math.PI*i/pts, r=(i%2===0)?R:rIn;
+      const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a);
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+    }
+    ctx.closePath(); ctx.fill();
+  } else if(type==="skull"){
+    ctx.save();
+    // cranium + jaw
+    ctx.beginPath();
+    ctx.arc(cx,cy-R*0.12,R*0.62,Math.PI,0,false);
+    ctx.lineTo(cx+R*0.5,cy+R*0.25);
+    ctx.quadraticCurveTo(cx+R*0.35,cy+R*0.55,cx,cy+R*0.55);
+    ctx.quadraticCurveTo(cx-R*0.35,cy+R*0.55,cx-R*0.5,cy+R*0.25);
+    ctx.closePath(); ctx.fill();
+    // eye + nose holes (cut)
+    ctx.fillStyle="#000";
+    ctx.beginPath(); ctx.ellipse(cx-R*0.22,cy-R*0.05,R*0.16,R*0.2,0,0,TAU); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx+R*0.22,cy-R*0.05,R*0.16,R*0.2,0,0,TAU); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(cx,cy+R*0.05); ctx.lineTo(cx-R*0.08,cy+R*0.22); ctx.lineTo(cx+R*0.08,cy+R*0.22); ctx.closePath(); ctx.fill();
+    for(let i=-2;i<=2;i++) ctx.fillRect(cx+i*R*0.14-R*0.02,cy+R*0.36,R*0.04,R*0.13);
+    // crossbones
+    ctx.fillStyle="#fff";
+    const boneLen=R*0.9, boneW=R*0.12, capR=R*0.14;
+    for(const ang of [Math.PI/4,-Math.PI/4]){
+      ctx.save(); ctx.translate(cx,cy+R*0.62); ctx.rotate(ang);
+      ctx.fillRect(-boneLen/2,-boneW/2,boneLen,boneW);
+      ctx.beginPath(); ctx.arc(-boneLen/2,0,capR,0,TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(boneLen/2,0,capR,0,TAU); ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+  } else if(type==="checkerflag"){
+    ctx.save();
+    const fw=R*1.7,fh=R*1.1,cols=6,rows=4,cw=fw/cols,ch=fh/rows;
+    const x0=cx-fw/2,y0=cy-fh/2;
+    for(let r=0;r<rows;r++) for(let c=0;c<cols;c++) if((r+c)%2===0) ctx.fillRect(x0+c*cw,y0+r*ch,cw,ch);
+    ctx.restore();
+  } else if(type==="football"){
+    ctx.save();
+    ctx.translate(cx,cy); ctx.rotate(-Math.PI/12);
+    ctx.beginPath(); ctx.ellipse(0,0,R*0.95,R*0.55,0,0,TAU); ctx.fill();
+    ctx.fillStyle="#000";
+    ctx.fillRect(-R*0.8,-R*0.05,R*1.6,R*0.1);
+    for(let i=-1;i<=1;i++) ctx.fillRect(i*R*0.35-R*0.015,-R*0.16,R*0.03,R*0.2);
+    ctx.restore();
+  } else if(type==="basketball"){
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx,cy,R*0.95,0,TAU); ctx.fill();
+    ctx.fillStyle="#000";
+    const t=R*0.08, segHalf=R*0.77;
+    ctx.fillRect(cx-t/2,cy-segHalf,t,segHalf*2);
+    ctx.fillRect(cx-segHalf,cy-t/2,segHalf*2,t);
+    ctx.restore();
+  } else if(type==="car"){
+    ctx.save();
+    const bw=R*1.9, bh=R*0.75, bx0=cx-bw/2;
+    ctx.beginPath();
+    ctx.moveTo(bx0,cy+bh*0.5);
+    ctx.lineTo(bx0,cy+bh*0.05);
+    ctx.lineTo(bx0+bw*0.18,cy-bh*0.05);
+    ctx.lineTo(bx0+bw*0.32,cy-bh*0.55);
+    ctx.lineTo(bx0+bw*0.68,cy-bh*0.55);
+    ctx.lineTo(bx0+bw*0.82,cy-bh*0.05);
+    ctx.lineTo(bx0+bw,cy+bh*0.05);
+    ctx.lineTo(bx0+bw,cy+bh*0.5);
+    ctx.closePath(); ctx.fill();
+    const wheelR=bh*0.42;
+    ctx.beginPath(); ctx.arc(bx0+bw*0.24,cy+bh*0.5,wheelR,0,TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(bx0+bw*0.76,cy+bh*0.5,wheelR,0,TAU); ctx.fill();
+    ctx.restore();
+  } else if(type==="flame"){
+    ctx.save();
+    const flamePath=(sc,ox,oy)=>{
+      ctx.beginPath();
+      ctx.moveTo(cx+ox,cy+oy+R*0.92*sc);
+      ctx.bezierCurveTo(cx+ox-R*0.62*sc,cy+oy+R*0.4*sc,cx+ox-R*0.5*sc,cy+oy-R*0.18*sc,cx+ox-R*0.12*sc,cy+oy-R*0.6*sc);
+      ctx.bezierCurveTo(cx+ox-R*0.02*sc,cy+oy-R*0.3*sc,cx+ox+R*0.2*sc,cy+oy-R*0.22*sc,cx+ox+R*0.08*sc,cy+oy-R*0.68*sc);
+      ctx.bezierCurveTo(cx+ox+R*0.58*sc,cy+oy-R*0.22*sc,cx+ox+R*0.6*sc,cy+oy+R*0.32*sc,cx+ox,cy+oy+R*0.92*sc);
+      ctx.closePath();
+    };
+    flamePath(1,0,0); ctx.fill();
+    ctx.fillStyle="#000";
+    flamePath(0.52,R*0.06,R*0.18); ctx.fill();
+    ctx.restore();
+  } else if(type==="wrench"){
+    ctx.save();
+    ctx.translate(cx,cy); ctx.rotate(-Math.PI/6);
+    const barLen=R*1.5,barW=R*0.22,headR=R*0.4;
+    ctx.fillRect(-barLen/2,-barW/2,barLen,barW);
+    for(const sx of [-1,1]){
+      const hx=sx*barLen/2;
+      ctx.beginPath();
+      for(let i=0;i<6;i++){ const a=TAU*i/6,x=hx+headR*Math.cos(a),y=headR*Math.sin(a); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.fillStyle="#000";
+    for(const sx of [-1,1]){
+      const hx=sx*barLen/2;
+      ctx.beginPath();
+      for(let i=0;i<6;i++){ const a=TAU*i/6+Math.PI/6,x=hx+headR*0.55*Math.cos(a),y=headR*0.55*Math.sin(a); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  } else if(type==="pawprint"){
+    ctx.save();
+    ctx.beginPath(); ctx.ellipse(cx,cy+R*0.25,R*0.5,R*0.4,0,0,TAU); ctx.fill();
+    const toeR=R*0.22, toePos=[[-0.55,-0.35],[-0.2,-0.6],[0.2,-0.6],[0.55,-0.35]];
+    for(const [tx,ty] of toePos){ ctx.beginPath(); ctx.ellipse(cx+tx*R,cy+ty*R,toeR,toeR*1.15,0,0,TAU); ctx.fill(); }
+    ctx.restore();
+  } else if(type==="bolt"){
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(cx+R*0.15,cy-R*0.9);
+    ctx.lineTo(cx-R*0.35,cy+R*0.05);
+    ctx.lineTo(cx-R*0.05,cy+R*0.05);
+    ctx.lineTo(cx-R*0.2,cy+R*0.9);
+    ctx.lineTo(cx+R*0.45,cy-R*0.15);
+    ctx.lineTo(cx+R*0.1,cy-R*0.15);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  } else if(type==="anchor"){
+    ctx.save();
+    // ring — a filled donut, sturdier to print than a thin stroked circle
+    const ringCy=cy-R*0.62, ringOut=R*0.24, ringIn=R*0.13;
+    ctx.beginPath();
+    ctx.arc(cx,ringCy,ringOut,0,TAU);
+    ctx.arc(cx,ringCy,ringIn,0,TAU,true);
+    ctx.fill("evenodd");
+    // shaft + stock
+    ctx.fillRect(cx-R*0.09,cy-R*0.42,R*0.18,R*1.05);
+    ctx.fillRect(cx-R*0.42,cy-R*0.28,R*0.84,R*0.14);
+    // flukes — filled hook flares at the base, one each side
+    const baseY=cy+R*0.6;
+    for(const s of [-1,1]){
+      ctx.beginPath();
+      ctx.moveTo(cx+s*R*0.09,baseY-R*0.05);
+      ctx.lineTo(cx+s*R*0.65,baseY+R*0.32);
+      ctx.lineTo(cx+s*R*0.42,baseY+R*0.42);
+      ctx.lineTo(cx+s*R*0.05,baseY+R*0.12);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+function drawBandShape(ctx,type,x0,x1,ymid,h){
+  if(type==="wave"){
+    const cycles=Math.max(2,Math.round((x1-x0)/(h*3))), N=90;
+    ctx.beginPath();
+    for(let i=0;i<=N;i++){ const t=i/N,x=x0+(x1-x0)*t, y=ymid-h*0.4*Math.sin(TAU*cycles*t)-h*0.5;
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y); }
+    for(let i=N;i>=0;i--){ const t=i/N,x=x0+(x1-x0)*t, y=ymid-h*0.4*Math.sin(TAU*cycles*t)+h*0.5; ctx.lineTo(x,y); }
+    ctx.closePath(); ctx.fill();
+  } else if(type==="diamondstrip"){
+    const n=Math.max(3,Math.round((x1-x0)/(h*1.6)));
+    for(let i=0;i<n;i++){
+      const cx=x0+(x1-x0)*(i+0.5)/n;
+      ctx.save(); ctx.translate(cx,ymid); ctx.rotate(Math.PI/4);
+      ctx.fillRect(-h*0.32,-h*0.32,h*0.64,h*0.64);
+      ctx.restore();
+    }
+  } else if(type==="ridge"){
+    const peaks=Math.max(3,Math.round((x1-x0)/(h*2.4)));
+    ctx.beginPath(); ctx.moveTo(x0,ymid+h*0.5);
+    for(let i=0;i<=peaks*2;i++){
+      const t=i/(peaks*2), x=x0+(x1-x0)*t, y=(i%2===0)?ymid+h*0.5:ymid-h*0.5;
+      ctx.lineTo(x,y);
+    }
+    ctx.lineTo(x1,ymid+h*0.5); ctx.closePath(); ctx.fill();
+  }
+}
+
+/* Finest enclosed void/wall each icon draws, as a fraction of its own Size
+   (R) — read straight off the constants in drawPointShape above (teeth
+   notch width, seam gap, hex-socket wall, etc). Icons built from big solid
+   fills with no thin cuts (car, flame's not, pawprint, bolt) are left out —
+   nothing in them is small enough to be nozzle-limited before the icon
+   itself is. Used to warn when a chosen nozzle can't resolve an icon's
+   detail, and to suggest a better one. */
+const ICON_MIN_RATIO={
+  skull:0.04,        // jaw teeth notch width
+  checkerflag:0.28,  // one checkerboard square
+  football:0.03,     // lace tick width
+  basketball:0.08,   // seam gap width
+  wrench:0.18,       // hex socket wall thickness
+  anchor:0.11,        // ring wall thickness
+  flame:0.12          // gap between the outer and inner flame outline
+};
+const ICON_LABEL={
+  skull:"skull & crossbones", checkerflag:"checkered flag", football:"football",
+  basketball:"basketball", car:"car silhouette", flame:"flame", wrench:"wrench",
+  pawprint:"paw print", bolt:"lightning bolt", anchor:"anchor",
+  sunburst:"sunburst", star:"star", wave:"wave band", diamondstrip:"diamond strip", ridge:"mountain ridge"
+};
+function ornamentFinestFeatureMM(P){
+  if(P.ornament==="none") return null;
+  const ratio=ICON_MIN_RATIO[P.ornament];
+  return ratio!=null ? P.ornamentSize*ratio : null;
+}
+function borderLineMM(P){
+  return P.borderOn ? (P.borderStyle==="double"?P.borderWidth*0.38:P.borderWidth) : null;
+}
+// common small-nozzle sizes, descending — matches the Nozzle diameter select
+const NOZZLE_STOPS=[0.8,0.6,0.4,0.2];
+// rule of thumb: a nozzle can lay a wall/gap down cleanly once the feature
+// is comfortably wider than the nozzle itself (~1.2x), not just equal to it
+function recommendedNozzleMM(finestMM){
+  if(finestMM==null) return 0.4; // nothing fine in play — the standard nozzle is fine
+  for(const nz of NOZZLE_STOPS){ if(finestMM>=nz*1.2) return nz; }
+  return null; // finer than even a 0.2mm hobby nozzle comfortably resolves
+}
+
+/* ============================================================
+   LAYOUT — pure mm math, shared by geometry build and the plan preview
+   ============================================================ */
+function computeLayout(P){
+  // clearance beyond the border's own footprint — scales with plate size
+  // instead of a flat mm constant, so it stays proportionate at every scale
+  // and doesn't eat most of the plate on small/short plates
+  const pad=Math.max(0.35,Math.min(1.0,P.plateH*0.05));
+  let margin=(P.borderOn?P.borderInset+P.borderWidth:0)+pad;
+  // guard tiny scales: border+padding must never eat the whole plate
+  margin=Math.min(margin,P.plateH*0.35,P.plateW*0.35);
+  const cxL=-P.plateW/2+margin, cxR=P.plateW/2-margin;
+  const cyT=P.plateH/2-margin, cyB=-P.plateH/2+margin;
+  const contentH=Math.max(0.1,cyT-cyB);
+  const bandTopH=contentH*0.22, bandBotH=contentH*0.22, gap=contentH*0.025;
+  const bandMidH=Math.max(0.1,contentH-bandTopH-bandBotH-2*gap);
+  const bandTop=[cyT-bandTopH,cyT];
+  const bandMid=[bandTop[0]-gap-bandMidH,bandTop[0]-gap];
+  const bandBot=[cyB,bandMid[0]-gap];
+  return {margin,cxL,cxR,cyT,cyB,bandTop,bandMid,bandBot};
+}
+function holePositions(P){
+  if(P.holeCount===0) return [];
+  const hx=P.plateW/2-P.holeInsetSide, hy=P.plateH/2-P.holeInsetTop;
+  if(P.holeCount===2) return [[-hx,hy],[hx,hy]];
+  return [[-hx,hy],[hx,hy],[-hx,-hy],[hx,-hy]];
+}
+function clampRelief(th,mode,val){
+  if(mode==="emboss") return th+Math.max(0.05,val);
+  if(mode==="engrave") return Math.max(th*0.15,th-val);
+  return th; // flush — color only, no relief
+}
+function bandBox(L,y0mm,y1mm){ return {x0:L.cxL,x1:L.cxR,y0:y0mm,y1:y1mm}; }
+
+/* ============================================================
+   GEOMETRY BUILD — the single pass that produces both the extruded 3D
+   mesh (pos+color, non-indexed triangle soup like the reference file) and
+   the flat mm rectangles used to draw the 2D plan view, so the two views
+   can never drift out of sync with each other or with the exported STL.
+   ============================================================ */
+const POINT_ORNAMENTS=new Set(["sunburst","star","skull","checkerflag","football","basketball","car","flame","wrench","pawprint","bolt","anchor"]);
+function ornamentAnchor(P,L,res,toPx){
+  const isPoint=POINT_ORNAMENTS.has(P.ornament);
+  if(isPoint){
+    // point icons sit inside the text band itself — a star peeking through
+    // the state name (Lone Star-style) is a feature, not a collision
+    const yMap={top:(L.bandTop[0]+L.bandTop[1])/2, bottom:(L.bandBot[0]+L.bandBot[1])/2, center:(L.bandMid[0]+L.bandMid[1])/2};
+    if(P.ornamentPos==="corners"){
+      const y=(L.bandTop[0]+L.bandTop[1])/2;
+      return {point:true,pts:[toPx(L.cxL+P.ornamentSize*0.9,y),toPx(L.cxR-P.ornamentSize*0.9,y)]};
+    }
+    const y=yMap[P.ornamentPos]!=null?yMap[P.ornamentPos]:yMap.bottom;
+    return {point:true,pts:[toPx(0,y)]};
+  }
+  // band shapes (wave/ridge/diamond strip) live in the quiet margin strip
+  // between the text content and the border, so they never fight a text
+  // line for the same pixels
+  const yTopBand=P.plateH/2-L.margin*0.5, yBotBand=-P.plateH/2+L.margin*0.5;
+  const yMap={top:yTopBand, bottom:yBotBand, center:(L.bandMid[0]+L.bandMid[1])/2, corners:yTopBand};
+  const y=yMap[P.ornamentPos]!=null?yMap[P.ornamentPos]:yBotBand;
+  const a=toPx(L.cxL,y), b=toPx(L.cxR,y);
+  return {point:false,x0:a[0],x1:b[0],ymid:(a[1]+b[1])/2};
+}
+
+function buildMasks(P,res){
+  const Wpx=Math.max(4,Math.round(P.plateW*res)), Hpx=Math.max(4,Math.round(P.plateH*res));
+  const toPx=(xmm,ymm)=>[Wpx/2+xmm*res, Hpx/2-ymm*res];
+  const L=computeLayout(P);
+
+  // PLATE: rounded rect minus mounting holes
+  const pc=makeCanvas(Wpx,Hpx), px=pc.getContext("2d",{willReadFrequently:true});
+  px.fillStyle="#000"; px.fillRect(0,0,Wpx,Hpx);
+  px.fillStyle="#fff"; px.beginPath(); roundRectPath(px,0,0,Wpx,Hpx,P.cornerR*res); px.fill();
+  if(P.holeCount>0){
+    px.fillStyle="#000";
+    for(const [hx,hy] of holePositions(P)){
+      const [cx,cy]=toPx(hx,hy);
+      px.beginPath(); px.arc(cx,cy,P.holeD/2*res,0,TAU); px.fill();
+    }
+  }
+  const plateMask=maskFromCtx(px,Wpx,Hpx);
+
+  // TEXT: three fitted lines, any curated Google Font
+  const tc=makeCanvas(Wpx,Hpx), tx=tc.getContext("2d",{willReadFrequently:true});
+  tx.fillStyle="#000"; tx.fillRect(0,0,Wpx,Hpx);
+  let minFontPx=Infinity;
+  const mainFont=FONT_BY_KEY[P.font], topFontDef=(P.topFontOn&&P.topFont)?FONT_BY_KEY[P.topFont]:mainFont;
+  const drawBand=(text,font,y0mm,y1mm,scalePct,centerYmm)=>{
+    if(!text) return;
+    const p0=toPx(L.cxL,y0mm), p1=toPx(L.cxR,y1mm); // p0 = bottom-left px, p1 = top-right px
+    const boxW=p1[0]-p0[0], boxH=p0[1]-p1[1]; // pixel-y grows downward, so bottom(y0) - top(y1) is positive
+    const cyp=centerYmm!=null?toPx(0,centerYmm)[1]:(p0[1]+p1[1])/2;
+    const f=drawFittedLine(tx,text.toUpperCase(),font.fam,font.w,(p0[0]+p1[0])/2,cyp,boxW,boxH,scalePct/100,P.letterSpace,"#fff");
+    if(f!=null) minFontPx=Math.min(minFontPx,f);
+  };
+  // the main line re-centers into whatever content height is actually in
+  // use — if the top and/or bottom lines are empty, it isn't left sitting
+  // in its normal band offset toward unused space
+  const midTopEdge=P.topText?L.bandMid[1]:L.cyT, midBotEdge=P.bottomText?L.bandMid[0]:L.cyB;
+  const midCenterY=(midTopEdge+midBotEdge)/2;
+  drawBand(P.topText,topFontDef,L.bandTop[0],L.bandTop[1],P.topTextScale);
+  drawBand(P.midText,mainFont,L.bandMid[0],L.bandMid[1],P.midTextScale,midCenterY);
+  drawBand(P.bottomText,mainFont,L.bandBot[0],L.bandBot[1],P.bottomTextScale);
+  const textMask=maskFromCtx(tx,Wpx,Hpx);
+
+  // BORDER: several selectable frame styles, all built on the same rounded-rect
+  // ring primitive so they share the inset/width sliders intuitively
+  let borderMask=null;
+  if(P.borderOn){
+    const bc=makeCanvas(Wpx,Hpx), bx=bc.getContext("2d",{willReadFrequently:true});
+    bx.fillStyle="#000"; bx.fillRect(0,0,Wpx,Hpx); bx.fillStyle="#fff";
+    const inset=P.borderInset*res, w=P.borderWidth*res;
+    const ring=(ins,rw)=>{
+      const rO=Math.max(0,P.cornerR*res-ins);
+      bx.fillStyle="#fff";
+      bx.beginPath();
+      roundRectPath(bx,ins,ins,Wpx-2*ins,Hpx-2*ins,rO);
+      const rI=Math.max(0,rO-rw);
+      roundRectPath(bx,ins+rw,ins+rw,Wpx-2*(ins+rw),Hpx-2*(ins+rw),rI);
+      bx.fill("evenodd");
+    };
+    const style=P.borderStyle||"solid";
+    if(style==="double"){
+      const w1=w*0.38, gap=w*0.24, w2=w*0.38;
+      ring(inset,w1);
+      ring(inset+w1+gap,w2);
+    } else if(style==="dashed"){
+      ring(inset,w);
+      const rO=Math.max(0,P.cornerR*res-inset);
+      const x0=inset,y0=inset,x1=Wpx-inset,y1=Hpx-inset;
+      const dashLen=Math.max(w*1.4,res*0.8), gapLen=Math.max(w*1.0,res*0.6), period=dashLen+gapLen;
+      bx.fillStyle="#000";
+      for(let x=x0+rO;x<x1-rO-period;x+=period){
+        const gx=x+dashLen;
+        bx.fillRect(gx,y0-1,gapLen,w+2);
+        bx.fillRect(gx,y1-w-1,gapLen,w+2);
+      }
+      for(let y=y0+rO;y<y1-rO-period;y+=period){
+        const gy=y+dashLen;
+        bx.fillRect(x0-1,gy,w+2,gapLen);
+        bx.fillRect(x1-w-1,gy,w+2,gapLen);
+      }
+    } else if(style==="brackets"){
+      const armLen=Math.min(Wpx,Hpx)*0.22;
+      bx.fillStyle="#fff";
+      const corners=[[inset,inset,1,1],[Wpx-inset,inset,-1,1],[inset,Hpx-inset,1,-1],[Wpx-inset,Hpx-inset,-1,-1]];
+      for(const [cx,cy,sx,sy] of corners){
+        const hx0=Math.min(cx,cx+sx*armLen), hx1=Math.max(cx,cx+sx*armLen);
+        const hy0=Math.min(cy,cy+sy*w), hy1=Math.max(cy,cy+sy*w);
+        bx.fillRect(hx0,hy0,hx1-hx0,hy1-hy0);
+        const vx0=Math.min(cx,cx+sx*w), vx1=Math.max(cx,cx+sx*w);
+        const vy0=Math.min(cy,cy+sy*armLen), vy1=Math.max(cy,cy+sy*armLen);
+        bx.fillRect(vx0,vy0,vx1-vx0,vy1-vy0);
+      }
+    } else { // solid
+      ring(inset,w);
+    }
+    borderMask=maskFromCtx(bx,Wpx,Hpx);
+  }
+
+  // ORNAMENT: one parametric shape, placed by the same band layout
+  let ornMask=null;
+  if(P.ornament!=="none"){
+    const oc=makeCanvas(Wpx,Hpx), ox=oc.getContext("2d",{willReadFrequently:true});
+    ox.fillStyle="#000"; ox.fillRect(0,0,Wpx,Hpx); ox.fillStyle="#fff";
+    const a=ornamentAnchor(P,L,res,toPx);
+    if(a.point) for(const [cx,cy] of a.pts) drawPointShape(ox,P.ornament,cx,cy,P.ornamentSize*res);
+    else drawBandShape(ox,P.ornament,a.x0,a.x1,a.ymid,P.ornamentSize*res);
+    ornMask=maskFromCtx(ox,Wpx,Hpx);
+  }
+
+  return {Wpx,Hpx,plateMask,textMask,borderMask,ornMask,minFontMM:(minFontPx===Infinity?null:minFontPx/res)};
+}
+
+function buildPlate(P,res){
+  const {Wpx,Hpx,plateMask,textMask,borderMask,ornMask,minFontMM}=buildMasks(P,res);
+  const N=Wpx*Hpx, level=new Uint8Array(N);
+  for(let i=0;i<N;i++){
+    if(!plateMask[i]){ level[i]=255; continue; }
+    let Lv=0;
+    if(borderMask&&borderMask[i]) Lv=1;
+    if(ornMask&&ornMask[i]) Lv=2;
+    if(textMask[i]) Lv=3;
+    level[i]=Lv;
+  }
+  const th=P.thickness;
+  const zTop=[th, clampRelief(th,P.borderMode,P.borderHeight), clampRelief(th,P.ornamentMode,P.ornamentHeight), clampRelief(th,P.textMode,P.textHeight)];
+  const colOf=[hexToRGB(P.plateColor),hexToRGB(P.borderColor),hexToRGB(P.ornamentColor),hexToRGB(P.textColor)];
+
+  const pos=[],col=[],boxesMM=[];
+  const levelPos=[[],[],[],[]]; // per-level position-only lists, for the 3MF exporter's one-object-per-color
+  let vol=0;
+  for(let Lv=0;Lv<4;Lv++){
+    const sub=new Uint8Array(N); let any=false;
+    for(let i=0;i<N;i++) if(level[i]===Lv){ sub[i]=1; any=true; }
+    if(!any) continue;
+    const rects=greedyRects(sub,Wpx,Hpx), zt=zTop[Lv], c=colOf[Lv], lp=levelPos[Lv];
+    for(const r of rects){
+      const x0=r.x0/res-P.plateW/2, x1=r.x1/res-P.plateW/2;
+      const y1=P.plateH/2-r.y0/res, y0=P.plateH/2-r.y1/res;
+      const V=boxVerts(x0,x1,y0,y1,0,zt);
+      for(let i=0;i<V.length;i+=3){ pos.push(V[i],V[i+1],V[i+2]); col.push(c[0],c[1],c[2]); lp.push(V[i],V[i+1],V[i+2]); }
+      boxesMM.push({x0,x1,y0,y1,level:Lv});
+      vol+=(x1-x0)*(y1-y0)*zt;
+    }
+  }
+  return {
+    pos:new Float32Array(pos), color:new Float32Array(col), boxesMM,
+    levelPos:levelPos.map(a=>new Float32Array(a)),
+    triCount:pos.length/9, volMM3:vol, minFontMM, res
+  };
+}
+
+/* ============================================================
+   VIEWPORT — a small hand-rolled WebGL1 renderer, not Three.js. Artifacts
+   run under a strict CSP that blocks every external script host but Google
+   Fonts, so a CDN-loaded 3D library can silently fail to load; ~150 lines
+   of raw WebGL keeps the whole page self-contained and dependency-free.
+   Every box from emitBox() is already a closed, correctly-wound manifold,
+   so backface culling alone gives clean shading — no double-sided material
+   needed. Flat per-triangle normals are derived once from the position
+   buffer (same cross-product the STL exporter uses for its own normals).
+   ============================================================ */
+let gl,glCanvas,prog,uMVP,uL1,uL2,aPos,aNrm,aCol;
+const glBuf={pos:null,nrm:null,col:null};
+let curCount=0;
+let yaw=-0.5,pitch=1.05,dist=95,drag=false,lx=0,ly=0,userTouchedView=false;
+
+const VSRC=`
+attribute vec3 aPos; attribute vec3 aNrm; attribute vec3 aCol;
+uniform mat4 uMVP;
+varying vec3 vNrm; varying vec3 vCol;
+void main(){
+  vNrm=aNrm; vCol=aCol;
+  gl_Position=uMVP*vec4(aPos,1.0);
+}`;
+const FSRC=`
+precision mediump float;
+varying vec3 vNrm; varying vec3 vCol;
+uniform vec3 uL1; uniform vec3 uL2;
+void main(){
+  vec3 n=normalize(vNrm);
+  float amb=0.42;
+  float d1=max(0.0,dot(n,uL1))*0.62;
+  float d2=max(0.0,dot(n,uL2))*0.30;
+  vec3 c=vCol*(amb+d1)+vec3(0.20,0.55,0.85)*d2;
+  gl_FragColor=vec4(min(c,vec3(1.0)),1.0);
+}`;
+
+function compileShader(type,src){
+  const s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s));
+  return s;
+}
+function mat4Perspective(fovy,aspect,near,far){
+  const f=1/Math.tan(fovy/2), nf=1/(near-far);
+  return new Float32Array([f/aspect,0,0,0, 0,f,0,0, 0,0,(far+near)*nf,-1, 0,0,2*far*near*nf,0]);
+}
+function mat4LookAt(eye,target,up){
+  let zx=eye[0]-target[0],zy=eye[1]-target[1],zz=eye[2]-target[2];
+  let zl=Math.hypot(zx,zy,zz)||1; zx/=zl;zy/=zl;zz/=zl;
+  let xx=up[1]*zz-up[2]*zy, xy=up[2]*zx-up[0]*zz, xz=up[0]*zy-up[1]*zx;
+  let xl=Math.hypot(xx,xy,xz)||1; xx/=xl;xy/=xl;xz/=xl;
+  const yx=zy*xz-zz*xy, yy=zz*xx-zx*xz, yz=zx*xy-zy*xx;
+  return [xx,yx,zx,0, xy,yy,zy,0, xz,yz,zz,0,
+    -(xx*eye[0]+xy*eye[1]+xz*eye[2]), -(yx*eye[0]+yy*eye[1]+yz*eye[2]), -(zx*eye[0]+zy*eye[1]+zz*eye[2]), 1];
+}
+function mat4Mul(a,b){
+  const o=new Float32Array(16);
+  for(let c=0;c<4;c++) for(let r=0;r<4;r++){
+    let s=0; for(let k=0;k<4;k++) s+=a[k*4+r]*b[c*4+k];
+    o[c*4+r]=s;
+  }
+  return o;
+}
+function computeNormals(pos){
+  const n=pos.length/9, out=new Float32Array(pos.length);
+  for(let i=0;i<n;i++){
+    const b=i*9;
+    const ax=pos[b],ay=pos[b+1],az=pos[b+2], bx=pos[b+3],by=pos[b+4],bz=pos[b+5], cx=pos[b+6],cy=pos[b+7],cz=pos[b+8];
+    const ux=bx-ax,uy=by-ay,uz=bz-az, vx=cx-ax,vy=cy-ay,vz=cz-az;
+    let nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx;
+    const L=Math.hypot(nx,ny,nz)||1; nx/=L;ny/=L;nz/=L;
+    for(let k=0;k<3;k++){ out[b+k*3]=nx; out[b+k*3+1]=ny; out[b+k*3+2]=nz; }
+  }
+  return out;
+}
+
+function initGL(){
+  const el=$("view");
+  glCanvas=document.createElement("canvas");
+  glCanvas.style.display="block"; glCanvas.style.width="100%"; glCanvas.style.height="100%";
+  el.appendChild(glCanvas);
+  gl=glCanvas.getContext("webgl",{antialias:true,alpha:true})||glCanvas.getContext("experimental-webgl");
+  if(!gl) throw new Error("WebGL unavailable in this browser");
+  prog=gl.createProgram();
+  gl.attachShader(prog,compileShader(gl.VERTEX_SHADER,VSRC));
+  gl.attachShader(prog,compileShader(gl.FRAGMENT_SHADER,FSRC));
+  gl.linkProgram(prog);
+  if(!gl.getProgramParameter(prog,gl.LINK_STATUS)) console.error(gl.getProgramInfoLog(prog));
+  gl.useProgram(prog);
+  glBuf.pos=gl.createBuffer(); glBuf.nrm=gl.createBuffer(); glBuf.col=gl.createBuffer();
+  aPos=gl.getAttribLocation(prog,"aPos"); aNrm=gl.getAttribLocation(prog,"aNrm"); aCol=gl.getAttribLocation(prog,"aCol");
+  uMVP=gl.getUniformLocation(prog,"uMVP"); uL1=gl.getUniformLocation(prog,"uL1"); uL2=gl.getUniformLocation(prog,"uL2");
+  gl.uniform3f(uL1,0.42,-0.55,0.72); gl.uniform3f(uL2,-0.55,0.62,-0.35);
+  gl.enable(gl.DEPTH_TEST); gl.enable(gl.CULL_FACE); gl.cullFace(gl.BACK);
+  gl.clearColor(0,0,0,0);
+
+  glCanvas.style.cursor="grab";
+  glCanvas.addEventListener("pointerdown",e=>{drag=true;userTouchedView=true;lx=e.clientX;ly=e.clientY;glCanvas.style.cursor="grabbing";glCanvas.setPointerCapture(e.pointerId);});
+  glCanvas.addEventListener("pointerup",()=>{drag=false;glCanvas.style.cursor="grab";});
+  glCanvas.addEventListener("pointermove",e=>{
+    if(!drag)return;
+    yaw+=(e.clientX-lx)*0.008; pitch+=(e.clientY-ly)*0.008;
+    pitch=Math.max(0.05,Math.min(Math.PI-0.05,pitch)); lx=e.clientX; ly=e.clientY;});
+  glCanvas.addEventListener("wheel",e=>{e.preventDefault(); userTouchedView=true;
+    dist=Math.max(4,Math.min(1200,dist*(1+Math.sign(e.deltaY)*0.1)));},{passive:false});
+  addEventListener("resize",resize); resize(); loop();
+}
+function resize(){
+  const el=$("view"), w=el.clientWidth, h=el.clientHeight; if(!w||!h||!gl)return;
+  const dpr=Math.min(devicePixelRatio,2);
+  glCanvas.width=Math.round(w*dpr); glCanvas.height=Math.round(h*dpr);
+  gl.viewport(0,0,glCanvas.width,glCanvas.height);
+}
+function loop(){
+  requestAnimationFrame(loop);
+  if(!gl) return;
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  if(!curCount) return;
+  const eye=[dist*Math.sin(pitch)*Math.cos(yaw),dist*Math.sin(pitch)*Math.sin(yaw),dist*Math.cos(pitch)];
+  const view=mat4LookAt(eye,[0,0,0],[0,0,1]);
+  const proj=mat4Perspective(38*Math.PI/180,(glCanvas.width/glCanvas.height)||1,1,2000);
+  gl.uniformMatrix4fv(uMVP,false,mat4Mul(proj,view));
+  gl.bindBuffer(gl.ARRAY_BUFFER,glBuf.pos); gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos,3,gl.FLOAT,false,0,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,glBuf.nrm); gl.enableVertexAttribArray(aNrm); gl.vertexAttribPointer(aNrm,3,gl.FLOAT,false,0,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,glBuf.col); gl.enableVertexAttribArray(aCol); gl.vertexAttribPointer(aCol,3,gl.FLOAT,false,0,0);
+  gl.drawArrays(gl.TRIANGLES,0,curCount);
+}
+function setMesh(pos,color){
+  const nrm=computeNormals(pos);
+  gl.bindBuffer(gl.ARRAY_BUFFER,glBuf.pos); gl.bufferData(gl.ARRAY_BUFFER,pos,gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ARRAY_BUFFER,glBuf.nrm); gl.bufferData(gl.ARRAY_BUFFER,nrm,gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ARRAY_BUFFER,glBuf.col); gl.bufferData(gl.ARRAY_BUFFER,color,gl.STATIC_DRAW);
+  curCount=pos.length/3;
+}
+
+function drawPlan(P,boxesMM){
+  const c=$("planc"), x=c.getContext("2d"), Wc=c.width, Hc=c.height;
+  x.clearRect(0,0,Wc,Hc);
+  const k=Math.min((Wc-24)/P.plateW,(Hc-24)/P.plateH), M=[Wc/2,Hc/2];
+  const X=xm=>M[0]+xm*k, Y=ym=>M[1]-ym*k;
+  x.fillStyle="#0F171C"; x.fillRect(0,0,Wc,Hc);
+  for(const b of boxesMM){
+    x.fillStyle=(b.level===0)?P.plateColor:(b.level===1)?P.borderColor:(b.level===2)?P.ornamentColor:P.textColor;
+    const x0=X(b.x0), x1=X(b.x1), y0=Y(b.y1), y1=Y(b.y0);
+    x.fillRect(x0,y0,Math.max(0.6,x1-x0),Math.max(0.6,y1-y0));
+  }
+  x.strokeStyle="#22323C"; x.lineWidth=1;
+  x.strokeRect(X(-P.plateW/2)+0.5,Y(P.plateH/2)+0.5,P.plateW*k-1,P.plateH*k-1);
+}
+
+/* ============================================================
+   STL EXPORT (binary) — identical technique to the reference file
+   ============================================================ */
+function exportSTL(pos,name){
+  const tri=pos.length/9, buf=new ArrayBuffer(84+tri*50), dv=new DataView(buf);
+  new Uint8Array(buf,0,80).set(new TextEncoder().encode("plate-designer binary STL".padEnd(80).slice(0,80)));
+  dv.setUint32(80,tri,true);
+  let o=84;
+  for(let i=0;i<tri;i++){
+    const b=i*9;
+    const ax=pos[b],ay=pos[b+1],az=pos[b+2], bx=pos[b+3],by=pos[b+4],bz=pos[b+5],
+          cx=pos[b+6],cy=pos[b+7],cz=pos[b+8];
+    const ux=bx-ax,uy=by-ay,uz=bz-az, vx=cx-ax,vy=cy-ay,vz=cz-az;
+    let nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx;
+    const L=Math.hypot(nx,ny,nz)||1; nx/=L; ny/=L; nz/=L;
+    dv.setFloat32(o,nx,true);dv.setFloat32(o+4,ny,true);dv.setFloat32(o+8,nz,true);
+    dv.setFloat32(o+12,ax,true);dv.setFloat32(o+16,ay,true);dv.setFloat32(o+20,az,true);
+    dv.setFloat32(o+24,bx,true);dv.setFloat32(o+28,by,true);dv.setFloat32(o+32,bz,true);
+    dv.setFloat32(o+36,cx,true);dv.setFloat32(o+40,cy,true);dv.setFloat32(o+44,cz,true);
+    dv.setUint16(o+48,0,true); o+=50;
+  }
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([buf],{type:"model/stl"}));
+  a.download=name; a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ============================================================
+   3MF EXPORT (multi-color, one object per level)
+   Plain binary STL has no concept of "object" or "color" at all — every
+   part is just triangles, so a slicer has to guess where one printed piece
+   ends and the next begins purely from which triangles happen to touch.
+   With hundreds of small raised/recessed boxes per level, that guess comes
+   back as hundreds of tiny parts to individually re-color: exactly the
+   "ton of objects" problem.
+   3MF fixes this at the FORMAT level instead of the geometry level: it's a
+   zip of XML with an explicit <object> per part, each taggable with a
+   name and a suggested color via <basematerials>. So rather than merging
+   thousands of boxes into one watertight mesh (a much bigger rewrite),
+   each color LEVEL's boxes are kept exactly as generated but wrapped as
+   one named, pre-tinted 3MF object — background / border / ornament /
+   text become 4 objects total, ready to assign one AMS/filament slot each
+   in Bambu, Orca or PrusaSlicer, with no manual painting.
+   A minimal store-only (uncompressed) ZIP is written by hand below — no
+   deflate implementation needed, and it keeps the whole app dependency-free.
+   ============================================================ */
+let crc32Table=null;
+function crc32(bytes){
+  if(!crc32Table){
+    crc32Table=new Uint32Array(256);
+    for(let n=0;n<256;n++){
+      let c=n;
+      for(let k=0;k<8;k++) c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);
+      crc32Table[n]=c>>>0;
+    }
+  }
+  let crc=0xFFFFFFFF;
+  for(let i=0;i<bytes.length;i++) crc=(crc>>>8)^crc32Table[(crc^bytes[i])&0xFF];
+  return (crc^0xFFFFFFFF)>>>0;
+}
+/* store-method (uncompressed) ZIP — valid per spec, every 3MF reader
+   accepts it, and it needs no compression codec at all */
+function makeZip(files){
+  const enc=new TextEncoder();
+  const DOS_TIME=0, DOS_DATE=(1<<9)|(1<<5)|1; // fixed: Jan 1 1980, 00:00 — content doesn't depend on it
+  const locals=[], centrals=[];
+  let offset=0;
+  for(const f of files){
+    const nameBytes=enc.encode(f.name), data=f.data, sum=crc32(data);
+    const lh=new Uint8Array(30+nameBytes.length);
+    const ldv=new DataView(lh.buffer);
+    ldv.setUint32(0,0x04034b50,true); ldv.setUint16(4,20,true); ldv.setUint16(6,0,true); ldv.setUint16(8,0,true);
+    ldv.setUint16(10,DOS_TIME,true); ldv.setUint16(12,DOS_DATE,true);
+    ldv.setUint32(14,sum,true); ldv.setUint32(18,data.length,true); ldv.setUint32(22,data.length,true);
+    ldv.setUint16(26,nameBytes.length,true); ldv.setUint16(28,0,true);
+    lh.set(nameBytes,30);
+    locals.push(lh,data);
+
+    const ch=new Uint8Array(46+nameBytes.length);
+    const cdv=new DataView(ch.buffer);
+    cdv.setUint32(0,0x02014b50,true); cdv.setUint16(4,20,true); cdv.setUint16(6,20,true); cdv.setUint16(8,0,true); cdv.setUint16(10,0,true);
+    cdv.setUint16(12,DOS_TIME,true); cdv.setUint16(14,DOS_DATE,true);
+    cdv.setUint32(16,sum,true); cdv.setUint32(20,data.length,true); cdv.setUint32(24,data.length,true);
+    cdv.setUint16(28,nameBytes.length,true); cdv.setUint16(30,0,true); cdv.setUint16(32,0,true);
+    cdv.setUint16(34,0,true); cdv.setUint16(36,0,true); cdv.setUint32(38,0,true);
+    cdv.setUint32(42,offset,true);
+    ch.set(nameBytes,46);
+    centrals.push(ch);
+    offset+=lh.length+data.length;
+  }
+  const centralStart=offset;
+  let centralSize=0; for(const c of centrals) centralSize+=c.length;
+  const eocd=new Uint8Array(22), edv=new DataView(eocd.buffer);
+  edv.setUint32(0,0x06054b50,true); edv.setUint16(4,0,true); edv.setUint16(6,0,true);
+  edv.setUint16(8,files.length,true); edv.setUint16(10,files.length,true);
+  edv.setUint32(12,centralSize,true); edv.setUint32(16,centralStart,true); edv.setUint16(20,0,true);
+  return new Blob([...locals,...centrals,eocd],{type:"model/3mf"});
+}
+
+const LEVEL_NAMES=["Plate background","Border","Ornament","Text"];
+function build3MF(P,built){
+  const objects=[], baseEntries=[];
+  let nextId=2; // id 1 is reserved for the basematerials group
+  for(let Lv=0;Lv<4;Lv++){
+    const posArr=built.levelPos[Lv];
+    if(!posArr || posArr.length===0) continue;
+    const color=[P.plateColor,P.borderColor,P.ornamentColor,P.textColor][Lv];
+    const pIndex=baseEntries.length;
+    baseEntries.push(`<base name="${LEVEL_NAMES[Lv]}" displaycolor="${color.toUpperCase()}FF"/>`);
+
+    // weld coincident vertices (rounded to 0.0005mm) so the mesh is a
+    // reasonable size instead of 3 unique vertices per triangle
+    const vMap=new Map(), vx=[], vy=[], vz=[], idx=[];
+    const key=(x,y,z)=>Math.round(x*2000)+","+Math.round(y*2000)+","+Math.round(z*2000);
+    for(let i=0;i<posArr.length;i+=3){
+      const x=posArr[i],y=posArr[i+1],z=posArr[i+2],k=key(x,y,z);
+      let id=vMap.get(k);
+      if(id===undefined){ id=vx.length; vMap.set(k,id); vx.push(x); vy.push(y); vz.push(z); }
+      idx.push(id);
+    }
+    const vLines=new Array(vx.length);
+    for(let i=0;i<vx.length;i++) vLines[i]=`<vertex x="${vx[i].toFixed(4)}" y="${vy[i].toFixed(4)}" z="${vz[i].toFixed(4)}"/>`;
+    const tLines=new Array(idx.length/3);
+    for(let i=0,t=0;i<idx.length;i+=3,t++) tLines[t]=`<triangle v1="${idx[i]}" v2="${idx[i+1]}" v3="${idx[i+2]}"/>`;
+
+    objects.push(`<object id="${nextId}" type="model" pid="1" pindex="${pIndex}" name="${LEVEL_NAMES[Lv]}"><mesh><vertices>${vLines.join("")}</vertices><triangles>${tLines.join("")}</triangles></mesh></object>`);
+    nextId++;
+  }
+  const items=[]; for(let id=2;id<nextId;id++) items.push(`<item objectid="${id}"/>`);
+
+  const model=`<?xml version="1.0" encoding="UTF-8"?>
+<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">
+<resources>
+<basematerials id="1">${baseEntries.join("")}</basematerials>
+${objects.join("\n")}
+</resources>
+<build>${items.join("")}</build>
+</model>`;
+
+  const contentTypes=`<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/></Types>`;
+  const rels=`<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>`;
+
+  const enc=new TextEncoder();
+  return makeZip([
+    {name:"[Content_Types].xml", data:enc.encode(contentTypes)},
+    {name:"_rels/.rels", data:enc.encode(rels)},
+    {name:"3D/3dmodel.model", data:enc.encode(model)}
+  ]);
+}
+function exportThreeMF(P,built,name){
+  const blob=build3MF(P,built);
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const MAX_PIXELS=4_000_000; // clamp raster resolution so huge/custom plates stay responsive
+function clampRes(P,res){
+  const want=P.plateW*res*P.plateH*res;
+  return want>MAX_PIXELS ? Math.max(2,Math.sqrt(MAX_PIXELS/(P.plateW*P.plateH))) : res;
+}
+
+function readP(){
+  return {
+    plateW:+$("plateW").value, plateH:+$("plateH").value, cornerR:+$("cornerR").value, thickness:+$("thickness").value,
+    holeCount:+$("holeCount").value, holeD:+$("holeD").value, holeInsetTop:+$("holeInsetTop").value, holeInsetSide:+$("holeInsetSide").value,
+    topText:$("topText").value, midText:$("midText").value, bottomText:$("bottomText").value,
+    font:$("font").value, topFontOn:$("topFontOn").checked, topFont:$("topFont").value,
+    letterSpace:+$("letterSpace").value,
+    topTextScale:+$("topTextScale").value, midTextScale:+$("midTextScale").value, bottomTextScale:+$("bottomTextScale").value,
+    textMode:$("textMode").value, textHeight:+$("textHeight").value,
+    borderOn:$("borderOn").checked, borderStyle:$("borderStyle").value, borderInset:+$("borderInset").value, borderWidth:+$("borderWidth").value,
+    borderMode:$("borderMode").value, borderHeight:+$("borderHeight").value,
+    ornament:$("ornament").value, ornamentPos:$("ornamentPos").value, ornamentSize:+$("ornamentSize").value,
+    ornamentMode:$("ornamentMode").value, ornamentHeight:+$("ornamentHeight").value,
+    plateColor:$("plateColor").value, textColor:$("textColor").value, borderColor:$("borderColor").value, ornamentColor:$("ornamentColor").value,
+    material:$("material").value, nozzle:+$("nozzle").value,
+    previewRes:+$("previewRes").value, exportRes:+$("exportRes").value
+  };
+}
+
+function applyScalePreset(i){
+  const s=SCALES[i]; if(!s||s.den==null) return;
+  $("plateW").value=(REAL_W/s.den).toFixed(2);
+  $("plateH").value=(REAL_H/s.den).toFixed(2);
+  $("cornerR").value=Math.max(0.15,+((REAL_R/s.den)).toFixed(2));
+  $("holeD").value=Math.max(0.2,+((REAL_HOLE_D/s.den)).toFixed(2));
+  $("holeInsetTop").value=Math.max(0.4,+((REAL_HOLE_INSET_TOP/s.den)).toFixed(2));
+  $("holeInsetSide").value=Math.max(0.4,+((REAL_HOLE_INSET_SIDE/s.den)).toFixed(2));
+  $("hudScale").textContent="1/"+s.den;
+  update(); scheduleSaveHash();
+}
+function applyStylePreset(i){
+  const s=STYLE_PRESETS[i]; if(!s) return;
+  $("plateColor").value=s.plate; $("textColor").value=s.text; $("borderColor").value=s.border; $("ornamentColor").value=s.ornColor;
+  $("font").value=s.font; $("topFontOn").checked=s.topFontOn; $("topFont").value=s.topFont;
+  $("ornament").value=s.orn; $("ornamentPos").value=s.ornPos;
+  $("borderOn").checked=s.borderOn;
+  $("topText").value=s.top; $("midText").value=s.mid; $("bottomText").value=s.bottom;
+  // size the ornament off the actual band height it will sit in, not raw
+  // plate height — a fixed fraction of plateH overshoots a lot at 2:1
+  const Ltmp=computeLayout(readP());
+  const bandH=(s.orn==="sunburst"||s.orn==="star")?(Ltmp.bandTop[1]-Ltmp.bandTop[0])*0.7:Ltmp.margin*0.85;
+  $("ornamentSize").value=Math.max(1,Math.min(20,+bandH.toFixed(2)));
+  update(); scheduleSaveHash();
+}
+function initPresets(){
+  const sp=$("scalePreset"), tp=$("stylePreset"), font=$("font"), topFont=$("topFont");
+  SCALES.forEach((s,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=s.label; sp.appendChild(o); });
+  sp.value=1; // 1/10 default
+
+  const CATS=[...new Set(FONTS.map(f=>f.cat))];
+  for(const sel of [font,topFont]){
+    CATS.forEach(cat=>{
+      const g=document.createElement("optgroup"); g.label=cat;
+      FONTS.filter(f=>f.cat===cat).forEach(f=>{ g.appendChild(new Option(f.fam,f.k)); });
+      sel.appendChild(g);
+    });
+  }
+  font.value="archivo"; topFont.value="oswald";
+
+  STYLE_PRESETS.forEach((s,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=s.name; tp.appendChild(o); });
+  tp.value=1; // Golden State Sunset default
+
+  sp.addEventListener("change",()=>applyScalePreset(+sp.value));
+  tp.addEventListener("change",()=>applyStylePreset(+tp.value));
+}
+
+async function ensureFontsReady(P){
+  const specs=new Set();
+  const add=f=>specs.add(`${f.w} 16px "${f.fam}"`);
+  add(FONT_BY_KEY[P.font]);
+  if(P.topFontOn&&P.topFont) add(FONT_BY_KEY[P.topFont]);
+  try{ await Promise.all([...specs].map(s=>document.fonts.load(s))); }catch(e){}
+}
+
+let lastBuilt=null, lastP=null, updateToken=0;
+async function update(){
+  const token=++updateToken;
+  const P=readP();
+
+  $("cornerRV").textContent=P.cornerR.toFixed(2);
+  $("thicknessV").textContent=P.thickness.toFixed(1);
+  $("holeDV").textContent=P.holeD.toFixed(2);
+  $("holeInsetTopV").textContent=P.holeInsetTop.toFixed(1);
+  $("holeInsetSideV").textContent=P.holeInsetSide.toFixed(1);
+  $("letterSpaceV").textContent=P.letterSpace.toFixed(2);
+  $("topTextScaleV").textContent=P.topTextScale+"%";
+  $("midTextScaleV").textContent=P.midTextScale+"%";
+  $("bottomTextScaleV").textContent=P.bottomTextScale+"%";
+  $("textHeightV").textContent=P.textHeight.toFixed(2);
+  $("borderInsetV").textContent=P.borderInset.toFixed(2);
+  $("borderWidthV").textContent=P.borderWidth.toFixed(2);
+  $("borderHeightV").textContent=P.borderHeight.toFixed(2);
+  $("ornamentSizeV").textContent=P.ornamentSize.toFixed(1);
+  $("ornamentHeightV").textContent=P.ornamentHeight.toFixed(2);
+  $("previewResV").textContent=P.previewRes;
+  $("exportResV").textContent=P.exportRes;
+
+  const holeOn=P.holeCount>0;
+  $("holeD").disabled=$("holeInsetTop").disabled=$("holeInsetSide").disabled=!holeOn;
+  $("borderStyle").disabled=$("borderInset").disabled=$("borderWidth").disabled=$("borderMode").disabled=$("borderHeight").disabled=!P.borderOn;
+  const ornOn=P.ornament!=="none";
+  $("ornamentSize").disabled=$("ornamentMode").disabled=$("ornamentHeight").disabled=$("ornamentPos").disabled=!ornOn;
+  $("rowTopFont").style.display=$("topFont").style.display=P.topFontOn?"":"none";
+  $("topFont").disabled=!P.topFontOn;
+
+  if(!(P.plateW>P.plateH) || !(P.plateW>4) || !(P.plateH>2)){
+    $("note").className="bad";
+    $("note").textContent="Plate width must exceed height (landscape) and both must be a few mm at least.";
+    $("dl").disabled=$("dl3mf").disabled=true;
+    return;
+  }
+  $("dl").disabled=$("dl3mf").disabled=false;
+
+  await ensureFontsReady(P);
+  if(token!==updateToken) return;
+
+  const res=clampRes(P,P.previewRes);
+  const built=buildPlate(P,res);
+  if(token!==updateToken) return;
+  lastBuilt=built; lastP=P;
+
+  if(!userTouchedView) dist=Math.max(6,P.plateW*2.75); // auto-frame until the user takes the camera themselves
+  setMesh(built.pos,built.color);
+  drawPlan(P,built.boxesMM);
+
+  const mass=built.volMM3/1000*DENSITY[P.material];
+  $("mSize").innerHTML=P.plateW.toFixed(1)+" × "+P.plateH.toFixed(1)+'<span class="u">mm</span>';
+  const sp=SCALES.find((s,i)=>i===+$("scalePreset").value);
+  $("mScale").textContent=(sp&&sp.den)?("1/"+sp.den):"custom";
+  $("mThick").innerHTML=P.thickness.toFixed(2)+'<span class="u">mm</span>';
+  $("mMass").innerHTML=mass.toFixed(2)+'<span class="u">g</span>';
+  $("mTextSize").innerHTML=(built.minFontMM!=null?(built.minFontMM*0.72).toFixed(2):"—")+'<span class="u">mm</span>';
+  $("mHoles").textContent=holeOn?(P.holeCount+" × "+P.holeD.toFixed(1)+"mm"):"none";
+  $("mTri").textContent=built.triCount.toLocaleString();
+
+  const nz=P.nozzle;
+  const borderFeat=borderLineMM(P), iconFeat=ornamentFinestFeatureMM(P);
+  const finestMechFeat=[borderFeat,iconFeat].filter(v=>v!=null).sort((a,b)=>a-b)[0]??null;
+  const recNozzle=recommendedNozzleMM(finestMechFeat);
+  $("mNozzle").textContent=recNozzle==null?"<0.2mm":recNozzle.toFixed(1)+"mm";
+  $("mNozzle").parentElement.classList.toggle("warn",(recNozzle==null||recNozzle<nz));
+
+  let note="", cls="";
+  const capMM=built.minFontMM!=null?built.minFontMM*0.72:null;
+  const minSafeCapMM=nz*3; // at the default 0.4mm nozzle this is the same 1.2mm floor as before
+  if(P.thickness<nz*2){ cls="bad"; note=`Plate is thinner than ${(nz*2).toFixed(1)}mm (2 lines at a ${nz}mm nozzle) — it may not print solid.`; }
+  else if(borderFeat!=null && borderFeat<nz){ cls="warn"; note=`Border frame line (${borderFeat.toFixed(2)}mm) is thinner than your ${nz}mm nozzle — it may not resolve cleanly.`; }
+  else if(iconFeat!=null && iconFeat<nz){ cls="warn"; note=`The ${ICON_LABEL[P.ornament]||P.ornament} icon's finest detail (~${iconFeat.toFixed(2)}mm) is thinner than your ${nz}mm nozzle and will blur together — try a ${recNozzle==null?"finer":recNozzle+"mm"} nozzle, a bigger Size, or a bolder icon like the wrench or lightning bolt.`; }
+  else if(!P.topText && !P.midText && !P.bottomText){ cls="warn"; note="All three text lines are empty — add at least a plate number."; }
+  else if(capMM!=null && capMM<minSafeCapMM){ cls="warn"; note=`Fitted text is quite small (~${capMM.toFixed(2)}mm cap height, under the ~${minSafeCapMM.toFixed(1)}mm your ${nz}mm nozzle needs for crisp letterforms) — shorten the text, raise its size, or use a finer nozzle.`; }
+  else { note=`${P.plateW.toFixed(0)}×${P.plateH.toFixed(0)}mm plate, ${built.triCount.toLocaleString()} triangles, ~${mass.toFixed(1)}g in ${P.material}. STL for single-color printing, 3MF for one pre-colored object per part.`; }
+  $("note").className=cls; $("note").textContent=note;
+}
+
+/* A page hosted on claude.ai runs in a sandbox that only ever hands a file
+   to the viewer through the `downloads` capability, and that capability's
+   extension allowlist has neither .stl nor .3mf — so real exports only work
+   from the copy Claude sends directly into the chat (or any normal browser
+   tab this file is opened in on its own). Detect the hosted sandbox and say
+   so plainly instead of silently doing nothing when a button is clicked. */
+function inHostedArtifactSandbox(){
+  return !!(window.claude && typeof window.claude.use==="function");
+}
+function hostedSandboxNote(kind){
+  $("note").className="warn";
+  $("note").textContent=`This hosted preview can't hand you a${kind==="3mf"?" .3mf":"n .stl"} file directly (Claude's page sandbox only allows a short list of file types, and ${kind==="3mf"?".3mf":".stl"} isn't one of them). Open the copy Claude sent you in the conversation instead — export works there.`;
+}
+function baseFileName(P){
+  return `plate_${(P.topText||P.midText||"custom").replace(/[^a-z0-9]+/gi,"_").toLowerCase()}_${P.plateW.toFixed(0)}x${P.plateH.toFixed(0)}`;
+}
+$("dl").addEventListener("click",async ()=>{
+  if(!lastP) return;
+  if(inHostedArtifactSandbox()){ hostedSandboxNote("stl"); return; }
+  const btn=$("dl"), old=btn.textContent;
+  btn.disabled=true; btn.textContent="Building…";
+  await new Promise(r=>setTimeout(r,10)); // let the label repaint before the heavier export build
+  try{
+    const res=clampRes(lastP,lastP.exportRes);
+    const built=buildPlate(lastP,res);
+    exportSTL(built.pos,baseFileName(lastP)+".stl");
+  } finally { btn.disabled=false; btn.textContent=old; }
+});
+$("dl3mf").addEventListener("click",async ()=>{
+  if(!lastP) return;
+  if(inHostedArtifactSandbox()){ hostedSandboxNote("3mf"); return; }
+  const btn=$("dl3mf"), old=btn.textContent;
+  btn.disabled=true; btn.textContent="Building…";
+  await new Promise(r=>setTimeout(r,10));
+  try{
+    const res=clampRes(lastP,lastP.exportRes);
+    const built=buildPlate(lastP,res);
+    exportThreeMF(lastP,built,baseFileName(lastP)+".3mf");
+  } finally { btn.disabled=false; btn.textContent=old; }
+});
+
+/* unit converter — either field drives the other */
+let cvBusy=false;
+$("cvMM").addEventListener("input",()=>{
+  if(cvBusy)return; cvBusy=true;
+  const v=+$("cvMM").value; $("cvIN").value=isFinite(v)?+(v/25.4).toFixed(4):"";
+  cvBusy=false;
+});
+$("cvIN").addEventListener("input",()=>{
+  if(cvBusy)return; cvBusy=true;
+  const v=+$("cvIN").value; $("cvMM").value=isFinite(v)?+(v*25.4).toFixed(2):"";
+  cvBusy=false;
+});
+
+const LIVE_IDS=["plateW","plateH","cornerR","thickness","holeCount","holeD","holeInsetTop","holeInsetSide",
+  "topText","midText","bottomText","font","topFontOn","topFont","letterSpace","topTextScale","midTextScale","bottomTextScale",
+  "textMode","textHeight","borderOn","borderStyle","borderInset","borderWidth","borderMode","borderHeight",
+  "ornament","ornamentPos","ornamentSize","ornamentMode","ornamentHeight",
+  "plateColor","textColor","borderColor","ornamentColor","material","nozzle","previewRes","exportRes"];
+LIVE_IDS.forEach(id=>{ $(id).addEventListener("input",update); $(id).addEventListener("change",update); });
+
+$("reset").addEventListener("click",()=>{
+  $("scalePreset").value=1; applyScalePreset(1);
+  $("stylePreset").value=1; applyStylePreset(1);
+  $("thickness").value=1.2; $("holeCount").value=0;
+  $("letterSpace").value=0.06; $("topTextScale").value=100; $("midTextScale").value=100; $("bottomTextScale").value=100;
+  $("textMode").value="emboss"; $("textHeight").value=0.4;
+  $("borderStyle").value="solid"; $("borderInset").value=1; $("borderWidth").value=1; $("borderMode").value="emboss"; $("borderHeight").value=0.3;
+  $("material").value="PLA"; $("nozzle").value="0.4"; $("previewRes").value=6; $("exportRes").value=12;
+  $("topFontOn").checked=false;
+  yaw=-0.5; pitch=1.05; userTouchedView=false;
+  update(); scheduleSaveHash();
+});
+
+/* ---- Basic / Advanced mode: display filter only, no geometry change ---- */
+let basicMode=false;
+function setMode(basic){
+  basicMode=basic;
+  document.body.classList.toggle("basic-mode",basic);
+  $("modeBasicBtn").classList.toggle("active",basic);
+  $("modeAdvBtn").classList.toggle("active",!basic);
+}
+$("modeBasicBtn").addEventListener("click",()=>{setMode(true); scheduleSaveHash();});
+$("modeAdvBtn").addEventListener("click",()=>{setMode(false); scheduleSaveHash();});
+
+/* ---- save/share a build as a URL hash ---- */
+const PERSIST_IDS=["scalePreset","stylePreset",...LIVE_IDS];
+const PERSIST_CHECKBOXES=new Set(["topFontOn","borderOn"]);
+function serializeConfig(){
+  const o={};
+  for(const id of PERSIST_IDS){ const el=$(id); o[id]=PERSIST_CHECKBOXES.has(id)?el.checked:el.value; }
+  o._mode=basicMode?"basic":"advanced";
+  return o;
+}
+function applyConfig(o){
+  for(const id of PERSIST_IDS){
+    if(!(id in o)) continue;
+    const el=$(id);
+    if(PERSIST_CHECKBOXES.has(id)) el.checked=!!o[id]; else el.value=o[id];
+  }
+  setMode(o._mode==="basic");
+}
+function saveHashNow(){
+  try{ history.replaceState(null,"","#cfg="+btoa(JSON.stringify(serializeConfig()))); }catch(e){}
+}
+let hashTimer=null;
+function scheduleSaveHash(){ clearTimeout(hashTimer); hashTimer=setTimeout(saveHashNow,400); }
+function tryRestoreFromHash(){
+  const m=location.hash.match(/#cfg=([^&]+)/);
+  if(!m) return false;
+  try{ applyConfig(JSON.parse(atob(m[1]))); return true; }catch(e){ return false; }
+}
+$("saveLink").addEventListener("click",async ()=>{
+  clearTimeout(hashTimer); saveHashNow();
+  const btn=$("saveLink"), old=btn.textContent;
+  try{ await navigator.clipboard.writeText(location.href); btn.textContent="Copied!"; }
+  catch(e){ btn.textContent="Link updated in address bar"; }
+  setTimeout(()=>{ btn.textContent=old; },1800);
+});
+
+/* ---- hover/focus tooltips for the "?" info icons ---- */
+(function(){
+  const pop=$("qtipPop");
+  function place(el){
+    pop.style.left="0px"; pop.style.top="0px"; pop.classList.add("show");
+    const r=el.getBoundingClientRect(), pr=pop.getBoundingClientRect();
+    let x=r.left+r.width/2-pr.width/2;
+    x=Math.max(8,Math.min(x,window.innerWidth-pr.width-8));
+    let y=r.top-pr.height-8;
+    if(y<8) y=r.bottom+8;
+    pop.style.left=x+"px"; pop.style.top=y+"px";
+  }
+  function show(el){ pop.textContent=el.getAttribute("data-tip"); place(el); }
+  function hide(){ pop.classList.remove("show"); }
+  document.querySelectorAll(".qtip").forEach(el=>{
+    el.addEventListener("mouseenter",()=>show(el));
+    el.addEventListener("mouseleave",hide);
+    el.addEventListener("focus",()=>show(el));
+    el.addEventListener("blur",hide);
+    el.addEventListener("click",e=>e.preventDefault());
+  });
+})();
+
+initPresets();
+if(inHostedArtifactSandbox()){
+  $("dl").title="Hosted preview can't deliver .stl files — use the copy Claude sent in the conversation to export.";
+  $("dl3mf").title="Hosted preview can't deliver .3mf files — use the copy Claude sent in the conversation to export.";
+}
+if(!tryRestoreFromHash()){ setMode(false); applyScalePreset(1); applyStylePreset(1); }
+LIVE_IDS.forEach(id=>{ $(id).addEventListener("input",scheduleSaveHash); $(id).addEventListener("change",scheduleSaveHash); });
+try{ initGL(); }catch(e){ console.error("3D viewport failed to start:", e); }
+update();
+</script>
